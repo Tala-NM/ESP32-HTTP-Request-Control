@@ -1,0 +1,137 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ESP32Servo.h>
+
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
+const char* serverName = "https://s-m.com.sa/f.html";
+
+Servo leftHip;
+Servo leftKnee;
+Servo leftAnkle;
+Servo rightHip;
+Servo rightKnee;
+Servo rightAnkle;
+
+const int leftHipPin = 4;
+const int leftKneePin = 16;
+const int leftAnklePin = 17;
+const int rightHipPin = 19;
+const int rightKneePin = 21;
+const int rightAnklePin = 22;
+
+void setup() {
+  Serial.begin(115200);
+
+  leftHip.attach(leftHipPin);
+  leftKnee.attach(leftKneePin);
+  leftAnkle.attach(leftAnklePin);
+  rightHip.attach(rightHipPin);
+  rightKnee.attach(rightKneePin);
+  rightAnkle.attach(rightAnklePin);
+
+  connectToWiFi();
+}
+
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    String payload = getLastDirection();
+
+    if (payload == "forward") {
+      moveForward();
+    } else if (payload == "Backward") {
+      moveBackward();
+    } else if (payload == "Left") {
+      turnLeft();
+    } else if (payload == "Rigth") {
+      turnRight();
+    } else if (payload == "Stop") {
+      stopMovement();
+    } else {
+      Serial.println("Unknown direction received.");
+    }
+  } else {
+    connectToWiFi(); 
+  }
+
+  delay(1000); 
+}
+
+void connectToWiFi() {
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Connecting to WiFi...");
+    delay(1000);
+  }
+  Serial.println("Connected to WiFi");
+}
+
+String getLastDirection() {
+  HTTPClient http;
+  http.begin(serverName);
+  http.setTimeout(20000);
+
+  int httpResponseCode = http.GET();
+  String payload = "";
+
+  if (httpResponseCode > 0) {
+    payload = http.getString();
+    Serial.println("Direction received: " + payload);
+  } else {
+    Serial.print("Error on HTTP request: ");
+    Serial.println(httpResponseCode);
+  }
+
+  http.end();
+  return payload;
+}
+
+void moveForward() {
+  Serial.println("Moving forward...");
+  leftHip.write(45); 
+  rightHip.write(45);
+  leftKnee.write(90);
+  rightKnee.write(90);
+  leftAnkle.write(90);
+  rightAnkle.write(90);
+}
+
+void moveBackward() {
+  Serial.println("Moving backward...");
+  leftHip.write(135); 
+  rightHip.write(135);
+  leftKnee.write(90);
+  rightKnee.write(90);
+  leftAnkle.write(90);
+  rightAnkle.write(90);
+}
+
+void turnLeft() {
+  Serial.println("Turning left...");
+  leftHip.write(90); 
+  rightHip.write(45);
+  leftKnee.write(90);
+  rightKnee.write(90);
+  leftAnkle.write(90);
+  rightAnkle.write(90);
+}
+
+void turnRight() {
+  Serial.println("Turning right...");
+  leftHip.write(45);
+  rightHip.write(90);
+  leftKnee.write(90);
+  rightKnee.write(90);
+  leftAnkle.write(90);
+  rightAnkle.write(90);
+}
+
+void stopMovement() {
+  Serial.println("Stopping...");
+  leftHip.write(90); 
+  rightHip.write(90);
+  leftKnee.write(90);
+  rightKnee.write(90);
+  leftAnkle.write(90);
+  rightAnkle.write(90);
+}
